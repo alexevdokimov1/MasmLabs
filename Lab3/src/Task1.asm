@@ -45,18 +45,14 @@ include c:\masm32\include\masm32rt.inc
 	mov ecx, 256
 
 	L1:
-		mov bx, [eax+ecx*2];
-		movsx ebx, bx;
+		mov bx, word ptr [eax+ecx*2];
 		add checkSumm, ebx;
 	loop L1
 
 	mov eax, checkSumm;
 	and eax, 0000FFFFh;
 
-	mov ebx, eax;
-	xor eax, eax;
-	sub eax, ebx;
-
+	neg eax;
 	mov checkSumm, eax;
 
 	printf ("Check summ: %d\n", [checkSumm] );

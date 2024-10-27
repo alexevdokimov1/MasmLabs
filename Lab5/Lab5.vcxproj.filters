@@ -15,24 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\Task2.asm">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="src\Task3.asm">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="src\Task6.asm">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="src\Task4.asm">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="src\Task1.asm">
-      <Filter>Source Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="src\Task5.asm">
+    <MASM Include="Task.asm">
       <Filter>Source Files</Filter>
     </MASM>
   </ItemGroup>

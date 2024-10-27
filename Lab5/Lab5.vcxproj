@@ -18,31 +18,11 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="src\Task1.asm">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\Task2.asm">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\Task3.asm">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="src\Task4.asm">
-      <FileType>Document</FileType>
-    </None>
-    <MASM Include="src\Task5.asm">
-      <FileType>Document</FileType>
-    </MASM>
-    <None Include="src\Task6.asm">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{4c5aa635-2c47-4a32-8e97-89364c2248cb}</ProjectGuid>
-    <RootNamespace>Lab3</RootNamespace>
+    <ProjectGuid>{7c67b745-fec7-43ae-b4b4-9ab4be9bb00b}</ProjectGuid>
+    <RootNamespace>Lab5</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -147,6 +127,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
+  <ItemGroup>
+    <MASM Include="Task.asm" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\masm.targets" />

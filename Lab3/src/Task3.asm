@@ -9,12 +9,12 @@ include c:\masm32\include\kernel32.inc
 includelib c:\masm32\lib\kernel32.lib
 include c:\masm32\include\masm32rt.inc
 
-DEBUG = 1
+DEBUG = 0
 
-.DATA ;сегмент инициализированных данных
-	FileName DB "data\w_512.dat",0 ;здесь лучше указывать полный путь к файлу
+.DATA
+	FileName DB "data\w_512.dat",0
 
-.DATA? ;сегмент не инициализированных данных
+.DATA?
 	hFile HANDLE ?
 	hMemory DWORD ?
 	pMemory DWORD ?
@@ -22,7 +22,6 @@ DEBUG = 1
 	pMemory2 DWORD ?
 	dwBytesRead dd ?
 	dwFileSize dd ?
-	count dword ?
 
 .CODE ;сегмент кода
 	START: ;точка старта программы
@@ -46,12 +45,14 @@ DEBUG = 1
 	jz ErrorMsg; если вывод операции 0, то ошибка
 	mov eax, pMemory;Грузим указатель
 
-	INVOKE GlobalAlloc, GMEM_FIXED or GMEM_ZEROINIT, 20048; выделяем 2048
+	INVOKE GlobalAlloc, GMEM_FIXED or GMEM_ZEROINIT, 512; выделяем 512 = 2 * 256
 	mov hMemory2, eax
 	invoke GlobalLock, hMemory2
 	mov pMemory2, eax ; Возвращаем указатель на память
 
-	printf("Summ with numbers\n");
+	if DEBUG
+		printf("Summ with numbers\n");
+	endif
 
 	mov ecx, 0;
 
@@ -83,8 +84,10 @@ DEBUG = 1
 		inc ecx;
 		cmp ecx, 256;
 		JL L1;
-		
+	
+	if DEBUG
 	printf("Summ from memory\n");
+	endif
 
 	mov ecx, 0;
 

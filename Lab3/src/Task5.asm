@@ -44,15 +44,15 @@ include c:\masm32\include\masm32rt.inc
 	mov edx, dwBytesRead;
 	sub edx, 1;
 	xor ebx, ebx;
-	mov bx, [eax+edx]
-	printf ("Last byte: %d\n", ebx);
+	mov bl, byte ptr [eax+edx]
+	printf ("Last byte: %d\n", bl);
 
 	mov eax, pMemory;Грузим указатель
 	mov edx, dwBytesRead;
 	sub edx, 2;
 	xor ebx, ebx;
-	mov bx, [eax+edx]
-	printf ("Prelast byte: %d\n", ebx);
+	mov bl, byte ptr [eax+edx]
+	printf ("Prelast byte: %d\n", bl);
 
 	invoke GlobalUnlock, pMemory
 	invoke GlobalFree, hMemory

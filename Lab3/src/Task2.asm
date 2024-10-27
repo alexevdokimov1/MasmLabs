@@ -42,7 +42,6 @@ include c:\masm32\include\masm32rt.inc
 	jz ErrorMsg; если вывод операции 0, то ошибка
 	mov eax, pMemory;Грузим указатель
 
-	mov esi, 0
 	mov ecx, 256
 
 	L1:
