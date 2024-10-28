@@ -38,15 +38,18 @@ worker ends
 	dwBytesRead dd ?
 	dwFileSize dd ?
 	count dd ?;
+
+	;task2
+	avgAge byte ?
 	
 	;task 3
 	summSalary dd ?
 
-	;task2
-	avgAge byte ?
-
 	;task3
 	t3result real8 ?
+
+	;task 4
+	seventhWorker byte 30 dup(?),0
 
 .CODE ;сегмент кода
 	START:
@@ -175,19 +178,40 @@ worker ends
 
 	printf("Средняя зарплата %.1f\n", [t3result])
 
-	printf("Задание 4\nФИО 7ого сотрудника: ")
+	printf("Задание 4\nФИО 7-ого сотрудника: ")
 	
 	mov ecx, 0;
+	lea esi,Workers.id
 	L4:
-		push ecx;
-			lea esi,Workers[6*sizeof(worker)].fio[ecx]
-			mov al, byte ptr [esi]
-			printf("%c", al)
-		pop ecx;
-		
+		mov al, [esi]
+
+		cmp al, 7
+		jz Found
+		add esi, SIZEOF(worker)
+
 		inc ecx;
-		cmp ecx, 30;
+		cmp ecx, count;
 		JL L4;
+	jmp NotFound
+
+		Found:
+		lea esi,Workers.fio
+		mov eax, SIZEOF(worker)
+		mul cx
+		add esi, eax
+
+		mov ecx, 0;
+		L5:
+			mov al, [esi]
+			lea edx, seventhWorker
+			add edx, ecx
+			mov [edx], al
+			add esi, 1
+			inc ecx;
+			cmp ecx, 30;
+			JL L5;
+		printf("%s", addr seventhWorker)
+		NotFound:
 
 	RET
 
