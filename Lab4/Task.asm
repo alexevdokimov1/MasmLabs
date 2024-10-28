@@ -10,25 +10,37 @@ include c:\masm32\include\kernel32.inc
 includelib c:\masm32\lib\kernel32.lib
 include c:\masm32\include\masm32rt.inc
 
-worker struc ;информация о сотруднике
+worker struc
 	id dw ?
-	fio db 30 dup (?) ;фамилия, имя, отчество
-	gender db ?;пол
-	age db ?;возраст
-	standing db ?;стаж
-	salary dd ?;оклад 
-	birthdate db 8 dup(?) ;дата рождения
+	fio db 30 dup (?)
+	gender db ?
+	age db ?
+	standing db ?
+	salary dd ?
+	birthdate db 8 dup(?)
 worker ends
 
-.CONST 
-	ten dd 10
-.DATA ;сегмент инициализированных данных
+.CONST
+	maxStructAlocSize EQU 20
+
+.DATA
 	FileName DB "data\base.dat",0
-	Workers worker 10 dup(<>);
+	Workers worker maxStructAlocSize dup(<>);
 
 	;task 1
 	menCount dd 0
 	womenCount dd 0;
+
+.DATA?
+	hFile HANDLE ?
+	hMemory DWORD ?
+	pMemory DWORD ?
+	dwBytesRead dd ?
+	dwFileSize dd ?
+	count dd ?;
+	
+	;task 3
+	summSalary dd ?
 
 	;task2
 	avgAge byte ?
@@ -36,21 +48,16 @@ worker ends
 	;task3
 	t3result real8 ?
 
-.DATA? ;сегмент не инициализированных данных
-	hFile HANDLE ?
-	hMemory DWORD ?
-	pMemory DWORD ?
-	dwBytesRead dd ?
-	dwFileSize dd ?
-	;task 3
-	summSalary dd ?
-
 .CODE ;сегмент кода
 	START:
+	
+	invoke SetConsoleCP, 1251
+	invoke SetConsoleOutputCP, 1251
+
 	invoke CreateFile, addr FileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
 	mov hFile, eax
 	cmp hFile, INVALID_HANDLE_VALUE
-	jz Error
+	jz FileHandleError
 	invoke GetFileSize, hFile, NULL
 	mov dwFileSize, eax
 	INVOKE GlobalAlloc, GMEM_FIXED or GMEM_ZEROINIT, dwFileSize
@@ -59,7 +66,17 @@ worker ends
 	mov pMemory, eax
 	INVOKE ReadFile, hFile, pMemory, 2048, addr dwBytesRead, NULL
 	or eax, eax
-	jz Error
+	jz FileReadError
+
+	xor ebx, ebx;
+	xor eax, eax;
+	mov ax, word ptr dwBytesRead
+	mov bl, SIZEOF(worker)
+	idiv bl;
+	mov count, eax;
+
+	cmp count, maxStructAlocSize
+	jg AlocError
 
 	mov ecx, dwBytesRead
 	mov esi, pMemory
@@ -69,7 +86,7 @@ worker ends
 	invoke GlobalUnlock, pMemory
 	invoke GlobalFree, hMemory
 	invoke CloseHandle, hFile
-	
+
 	mov ecx, 0;
 	lea esi,Workers.gender
 	L1:
@@ -93,10 +110,10 @@ worker ends
 		pop ecx;
 
 		inc ecx;
-		cmp ecx, 10;
+		cmp ecx, count;
 		JL L1;
 
-	printf("Task1\nMen count is %d\tWomen count is %d\n", [menCount], [womenCount]);
+	printf("Задание 1\nКоличество мужчин: %d\nКоличество женщин: %d\n", [menCount], [womenCount]);
 	
 	mov ecx, 0;
 	lea esi,Workers.age
@@ -115,19 +132,19 @@ worker ends
 		pop ecx;
 
 		inc ecx;
-		cmp ecx, 10;
+		cmp ecx, count;
 		JL L2;
 
 	xor eax, eax
 	mov ax, bx
-	mov bl, 10
+	mov ebx, count
 	idiv bl
 	mov avgAge, al
-	printf("Task2\nAvg age is %d\n", [avgAge])
+	printf("Задание 2\nСредний возраст: %d\n", [avgAge])
 
 
 	FINIT
-	printf("Task 3\n")
+	printf("Задание 3\n")
 
 	mov ecx, 0;
 	lea esi,Workers.salary
@@ -145,22 +162,20 @@ worker ends
 		pop ecx;
 
 		inc ecx;
-		cmp ecx, 10;
+		cmp ecx, count;
 		JL L3;
 
 	mov summSalary, ebx;
-	printf("Salary summ is %d\n", [summSalary])
+	printf("Суммарная зарплата %d\n", [summSalary])
 	
-	fild dword ptr summSalary
-    fild dword ptr ten
-
+	fild summSalary
+    fild count
 	fdiv
-
 	fst t3result
 
-	printf("Avg sallary is %f\n", [t3result])
+	printf("Средняя зарплата %.1f\n", [t3result])
 
-	printf("Task 4\n7-th worker name is ")
+	printf("Задание 4\nФИО 7ого сотрудника: ")
 	
 	mov ecx, 0;
 	L4:
@@ -174,11 +189,18 @@ worker ends
 		cmp ecx, 30;
 		JL L4;
 
-
 	RET
 
-	Error:
-		printf ("File can't be opened!");
+	FileHandleError:
+		printf ("Файл невозможно открыть!");
+		invoke ExitProcess,0
+
+	FileReadError:
+		printf ("Файл невозможно прочитать");
+		invoke ExitProcess,0
+
+	AlocError:
+		printf ("Невозможно выделить память под структуру содержащую более %d сотрудников", maxStructAlocSize);
 		invoke ExitProcess,0
 
 	END START
