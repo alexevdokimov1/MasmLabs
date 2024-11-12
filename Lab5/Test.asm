@@ -8,10 +8,12 @@ include c:\masm32\include\kernel32.inc
 include c:\masm32\include\gdi32.inc
 include c:\masm32\include\shlwapi.inc
 include c:\masm32\include\masm32rt.inc
+include c:\masm32\include\fpu.inc
 
 includelib c:\masm32\lib\user32.lib
 includelib c:\masm32\lib\kernel32.lib
 includelib c:\masm32\lib\Shlwapi.lib
+includelib c:\masm32\lib\fpu.lib
 
 
 WinMain proto :dword, :dword, :dword, :dword
@@ -37,13 +39,14 @@ WndProc proto :dword, :dword, :dword, :dword
 	;кнопка
 	CPBUT db 'Рассчитать',0  
 	CLSBTN db 'BUTTON',0  
-	;текст
+	;переменные вычисления
+	InXValue real10 ?
+	OutFuncValue real10 ?
+	OutFuncValueStr db 8 dup(' ')
+.const
 	WindowText db 'Посчитать sin(x)*cos(x): ',0
 	XValueString db 'x=',0
-	;переменные вычисления
-	InXValue real8 ?
-	OutFuncValue real8 ?;
-	OutFuncValueStr db 8 dup(' ');
+	ResultString db 'Результат'
 .code
 
 start:
@@ -160,6 +163,8 @@ PAINT_WINDOW:
 	INVOKE TextOutA, hdc, 10, 20, offset WindowText, SIZEOF WindowText
 	INVOKE TextOutA, hdc, 10, 50, offset XValueString, SIZEOF XValueString
 
+	INVOKE TextOutA,hdc, 100, 50, offset ResultString, SIZEOF ResultString
+	INVOKE TextOutA,hdc, 180, 50, offset OutFuncValueStr, SIZEOF OutFuncValueStr
 	INVOKE EndPaint, hdc, offset ps
 	MOV EAX, 0
 	ret
@@ -171,11 +176,21 @@ COMMAND_WINDOW:
 	jne EXIT_COMAND
 
     INVOKE SendMessage, hEdit, WM_GETTEXT, 20, offset TEXTA
-	invoke crt__atodbl,offset InXValue, offset TEXTA
+	INVOKE FpuAtoFL, offset TEXTA, offset InXValue, DEST_MEM
 
+	fld InXValue;
+	fcos
 
+	fld InXValue;
+	fsin
 
-	printf("%f", [InXValue])
+	fmul st(0), st(1)
+
+	fstp OutFuncValue
+
+	invoke FpuFLtoA,addr OutFuncValue,6,offset OutFuncValueStr, SRC1_REAL or SRC2_DIMM
+	INVOKE TextOutA,hdc, 100, 50, offset ResultString, SIZEOF ResultString
+	INVOKE TextOutA,hdc, 180, 50, offset OutFuncValueStr, SIZEOF OutFuncValueStr
 
 EXIT_COMAND:   
 	 MOV EAX, 0
