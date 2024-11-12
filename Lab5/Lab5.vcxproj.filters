@@ -15,8 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="Task.asm">
+    <MASM Include="Test.asm">
       <Filter>Source Files</Filter>
     </MASM>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Task.asm">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>
