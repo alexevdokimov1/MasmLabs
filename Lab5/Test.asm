@@ -15,7 +15,6 @@ includelib c:\masm32\lib\kernel32.lib
 includelib c:\masm32\lib\Shlwapi.lib
 includelib c:\masm32\lib\fpu.lib
 
-
 WinMain proto :dword, :dword, :dword, :dword
 WndProc proto :dword, :dword, :dword, :dword
 
@@ -27,26 +26,30 @@ WndProc proto :dword, :dword, :dword, :dword
 	hButton dd ?
 
 	hdc  DD ?
-	ps  PAINTSTRUCT <?> 
+	ps  PAINTSTRUCT <?>
 .data
+
 	ClassName db 'CLASS32',0
 	WindowTitle db 'Программа',0
-	WindowColor equ 48285ah
+	WindowColor equ 48200ah
+	TextColor equ  0fffffah
 	;поле
 	CLSEDT db 'EDIT',0  
 	TEXTA db 20 dup(0)
-	
 	;кнопка
 	CPBUT db 'Рассчитать',0  
-	CLSBTN db 'BUTTON',0  
+	CLSBTN db 'BUTTON',0 
+	
 	;переменные вычисления
 	InXValue real10 ?
 	OutFuncValue real10 ?
 	OutFuncValueStr db 8 dup(' ')
+
 .const
 	WindowText db 'Посчитать sin(x)*cos(x): ',0
 	XValueString db 'x=',0
 	ResultString db 'Результат'
+
 .code
 
 start:
@@ -96,7 +99,7 @@ WinMain proc hInst:dword, hPrevInst:dword, szCmdLine:dword, nShowCmd:dword
 
 	invoke	CreateWindowEx, WS_EX_APPWINDOW, addr ClassName, addr WindowTitle,
 				WS_CAPTION + WS_SYSMENU + WS_THICKFRAME + WS_GROUP + WS_TABSTOP, 
-				CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 
+				CW_USEDEFAULT, CW_USEDEFAULT, 500, 500, 
 				NULL, NULL, hInst, NULL
 
 	mov	hWnd, eax
@@ -159,6 +162,7 @@ PAINT_WINDOW:
     INVOKE BeginPaint, hWin, offset ps
 	mov hdc,eax  
 	INVOKE SetBkColor, hdc, WindowColor
+	INVOKE SetTextColor, hdc, TextColor
 
 	INVOKE TextOutA, hdc, 10, 20, offset WindowText, SIZEOF WindowText
 	INVOKE TextOutA, hdc, 10, 50, offset XValueString, SIZEOF XValueString
@@ -169,8 +173,7 @@ PAINT_WINDOW:
 	MOV EAX, 0
 	ret
 
-
-COMMAND_WINDOW:   
+COMMAND_WINDOW:
 	mov eax, hButton  
 	cmp lParam,eax   
 	jne EXIT_COMAND
@@ -188,7 +191,7 @@ COMMAND_WINDOW:
 
 	fstp OutFuncValue
 
-	invoke FpuFLtoA,addr OutFuncValue,6,offset OutFuncValueStr, SRC1_REAL or SRC2_DIMM
+	INVOKE FpuFLtoA,addr OutFuncValue,6,offset OutFuncValueStr, SRC1_REAL or SRC2_DIMM
 	INVOKE TextOutA,hdc, 100, 50, offset ResultString, SIZEOF ResultString
 	INVOKE TextOutA,hdc, 180, 50, offset OutFuncValueStr, SIZEOF OutFuncValueStr
 
