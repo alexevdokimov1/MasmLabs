@@ -130,10 +130,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="Task.asm">
-      <FileType>Document</FileType>
-    </None>
-    <MASM Include="Test.asm" />
+    <MASM Include="Task.asm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

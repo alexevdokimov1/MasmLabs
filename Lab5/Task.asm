@@ -1,155 +1,218 @@
-.586
-.MODEL FLAT, stdcall
+.386
+.model flat, stdcall
+option casemap :none   
 
-include win.inc
-include console.inc 
+include c:\masm32\include\windows.inc
+include c:\masm32\include\user32.inc
+include c:\masm32\include\kernel32.inc
+include c:\masm32\include\gdi32.inc
+include c:\masm32\include\shlwapi.inc
+include c:\masm32\include\masm32rt.inc
+include c:\masm32\include\fpu.inc
 
+includelib c:\masm32\lib\user32.lib
+includelib c:\masm32\lib\kernel32.lib
 includelib c:\masm32\lib\Shlwapi.lib
+includelib c:\masm32\lib\fpu.lib
 
-include c:\masm32\include\msvcrt.inc
-includelib c:\masm32\lib\msvcrt.lib
+WinMain proto :dword, :dword, :dword, :dword
+WndProc proto :dword, :dword, :dword, :dword
 
-.data  
-	BACKGROUND equ 48285ah
-	TEXT equ 0ffffffh
-    HWND      DD 0 ; дескриптор главного окна!
-    HINST   DD 0 ; дескриптор приложения  !
-    TITL  DB "Программа",0  
-    CLASSNAME DB 'CLASS32',0
-    Message   MSG <?>      
-    WC        WNDCLASS  <?>
-   
-    CPBUT db 'Рассчитать',0  
-    CLSBTN db 'BUTTON',0  
-    CLSEDT db 'EDIT',0  
-    CAP  db 'Сообщение',0
-    TEXTA db 20 dup(0) ; текст в полях редактирования      
-    TEXTB db 20 dup(0)
-	valueFromField real8 ?;
+.data?
+	hInstance 		dd ?
 
-	hBut DD ? ; дескриптор кнопки  
-	hedt1 DD ? ; дескриптор поля 1  
-	hdc  DD ? ; дескриптор контекста окна
-	ps  PAINTSTRUCT <?>  
-	mess1 db 'Посчитать sin(x)*cos(x): ',0 ; надпись в окне   
-	mess1_len equ $-mess1-1   
-	mess2 db '=',10 dup(' '),0 ; результат суммы строковый   
-	sum_len   equ $-mess2-1
+	hEdit dd ?
+	hButton dd ?
+
+	hdc  DD ?
+	ps  PAINTSTRUCT <?>
+.data
+	;текст поля
+	TEXTA db 20 dup(0)
+
+	;переменные вычисления
+	InXValue real10 ?
+	OutFuncValue real10 ?
+	OutFuncValueStr db 8 dup(' ')
+
+	fpuSaveState dw ?
+
+.const
+	ClassName db 'CLASS32',0
+	WindowTitle db 'Программа',0
+	WindowColor equ 48200ah
+	TextColor equ  0fffffah
+	
+	CLSEDT db 'EDIT',0  
+	CPBUT db 'Рассчитать',0  
+	CLSBTN db 'BUTTON',0 
+
+	WindowText db 'Посчитать sin(x)*cos(x): ',0
+	XValueString db 'x=',0
+	ResultString db 'Результат',0
+	InputUnits db 'градусов',0
+
+	CONST_180_VALUE real10 180.0
 
 .code
-	START:
 
-	FINIT
-
-	INVOKE GetModuleHandle, 0
-	MOV HINST, EAX
-
-	MOV WC.style, CS_HREDRAW+CS_VREDRAW+CS_GLOBALCLASS ; процедура обработки сообщений      
-    MOV WC.lpfnWndProc, OFFSET WNDPROC ;процедура обработки кода окна должна быть представлена в коде (пример процедуры будет приведен ниже)
-	MOV EAX, HINST
-	MOV WC.hInstance, EAX  
-	INVOKE LoadIcon, 0, IDI_APPLICATION  ;грузит иконки    
-	MOV  WC.hIcon, EAX  
-	INVOKE LoadCursor, 0, IDC_ARROW   ;грузит курсор   
-	MOV  WC.hCursor, EAX  
-	INVOKE CreateSolidBrush, BACKGROUND ;создает кисть для заполнения фона окна
-	MOV  WC.hbrBackground, EAX      
-	MOV DWORD PTR WC.lpszMenuName, 0      
-	MOV DWORD PTR WC.lpszClassName, OFFSET CLASSNAME  
-
-	INVOKE RegisterClass, OFFSET WC
-	INVOKE CreateWindowEx, 0, OFFSET CLASSNAME, OFFSET TITL, 
-	WS_CAPTION + WS_SYSMENU + WS_THICKFRAME + WS_GROUP + WS_TABSTOP, 100, 100, 400, 450, 0, 0, HINST,0
-	CMP EAX, 0  ; проверка на ошибку      
-	JZ  END_LOOP      
-	MOV HWND, EAX ; дескриптор окна 
-    INVOKE ShowWindow, HWND, SW_SHOWNORMAL ; показать созданное окно  
-    INVOKE UpdateWindow, HWND ;перерисовать видимую часть окна 
-
-	MSG_LOOP:  
-      INVOKE GetMessage, OFFSET Message, 0,0,0      
-	  CMP EAX, 0      
-	  JE  END_LOOP  
-	  INVOKE TranslateMessage, OFFSET Message
-	  INVOKE DispatchMessageA, OFFSET Message
-	  JMP MSG_LOOP 
-	END_LOOP:  
-	  INVOKE ExitProcess, Message.wParam ; выход из программы 
-
-WNDPROC  PROC hW:DWORD, Mes:DWORD, wParam:DWORD, lParam:DWORD      
-     CMP Mes, WM_DESTROY  ;будет выполняться при закрытии окна     
-	 JE  WMDESTROY
-	 CMP Mes, WM_CREATE ; при создании окна      
-	 JE  WMCREATE      
-	 CMP Mes, WM_COMMAND ; общие команды (сообщения) 
-	 JE  WMCOMMAND      
-	 CMP Mes, WM_PAINT ; события перерисовки формы окна      
-	 JE  WMPAINT      
-	 JMP DEFWNDPROC 
-
-WMCREATE:       ; создание окна    
-	INVOKE CreateWindowExA, 0, offset CLSEDT, offset TEXTA, WS_CHILD+WS_VISIBLE, 10, 50, 60, 20, hW, 0, HINST, 0
-	mov  hedt1,eax  ; сохранение дескриптора   
-	mov  eax,0   
-	INVOKE ShowWindow, hedt1, SW_SHOWNORMAL   
-
-	INVOKE CreateWindowExA, 0, offset CLSBTN, offset CPBUT, WS_CHILD+WS_VISIBLE, 10, 90, 100, 20, hW, 0, HINST, 0
-	mov  hBut,eax   ; сохранение дескриптора   
-	mov  eax,0   
-	INVOKE ShowWindow, hBut, SW_SHOWNORMAL      
+start:
 	
-	MOV EAX, 0      
-	JMP FINISH
+	finit
 
-WMCOMMAND:   ; обработка нажатия кнопки   
-	mov eax, hBut   
-	cmp lParam,eax    
-	jne COM_END  ; команда не соответствует нажатию кнопки
+	mov TEXTA, '0'
 
-    INVOKE SendMessage, hedt1, WM_GETTEXT, 20, offset TEXTA
+	invoke 	GetModuleHandle, NULL
+	mov	hInstance, eax
 
-    INVOKE crt_atof, offset valueFromField, addr TEXTA
- 
-    mov eax, sum_len
-	INVOKE TextOutA, hdc, 180, 50, offset mess2, eax 
-	;printf("%f", [ValueFromField])
-	;INVOKE _gcvt, ValueFromField, offset mess2+1
-	INVOKE LENSTR, offset mess2 ; определение длины результата  
-	push eax  
-	INVOKE TextOutA, hdc, 180, 50, offset mess2, eax  
-	pop ecx   ; очистка строки  
-	inc ecx  
-	mov al,' '  
-	mov edi, offset mess2+1 
-CLR: mov [edi],al  
-	 inc edi
-	 loop CLR 
+	invoke 	WinMain, hInstance, NULL, NULL, SW_SHOWDEFAULT
+	invoke	ExitProcess, eax
 
-COM_END:   
-	 MOV EAX, 0
-	 JMP FINISH 
+WinMain proc hInst:dword, hPrevInst:dword, szCmdLine:dword, nShowCmd:dword
 
-WMPAINT:
-    INVOKE BeginPaint, hW, offset ps
+	local 	wc 	:WNDCLASSEX
+	local 	msg 	:MSG
+	local 	hWnd 	:HWND
+
+	mov	wc.cbSize, sizeof WNDCLASSEX
+	mov	wc.style, CS_HREDRAW+CS_VREDRAW+CS_GLOBALCLASS
+	mov wc.lpfnWndProc, WndProc
+	mov wc.cbClsExtra, NULL
+	mov	wc.cbWndExtra, NULL
+
+	push	hInst
+	pop 	wc.hInstance
+
+	invoke CreateSolidBrush, WindowColor
+	mov	wc.hbrBackground, eax
+
+	mov	wc.lpszMenuName, NULL
+	mov wc.lpszClassName, offset ClassName
+
+	invoke	LoadIcon, hInst, IDI_APPLICATION
+	mov	wc.hIcon, eax
+	mov	wc.hIconSm, eax
+
+	invoke	LoadCursor, hInst, IDC_ARROW
+	mov	wc.hCursor, eax
+
+	invoke	RegisterClassEx, addr wc
+
+	invoke	CreateWindowEx, WS_EX_APPWINDOW, addr ClassName, addr WindowTitle,
+				WS_CAPTION + WS_SYSMENU + WS_THICKFRAME + WS_GROUP + WS_TABSTOP, 
+				CW_USEDEFAULT, CW_USEDEFAULT, 500, 500, 
+				NULL, NULL, hInst, NULL
+
+	mov	hWnd, eax
+
+	invoke	ShowWindow, hWnd, nShowCmd
+	invoke	UpdateWindow, hWnd
+
+MSG_LOOP:
+	invoke 	GetMessage, addr msg, NULL, 0, 0
+	cmp 	eax, 0
+	je 	END_LOOP
+
+	invoke	TranslateMessage, addr msg
+	invoke	DispatchMessage, addr msg
+
+	jmp 	MSG_LOOP
+
+END_LOOP:
+
+	mov	eax, msg.wParam
+	ret
+
+WinMain endp
+
+WndProc proc hWin :dword, uMsg :dword, 	wParam :dword,lParam:dword
+	
+	CMP uMsg, WM_DESTROY
+		JE  DESTROY_WINDOW
+	CMP uMsg, WM_CREATE
+		JE  CREATE_WINDOW	
+	CMP uMsg, WM_COMMAND
+		JE  COMMAND_WINDOW  
+	CMP uMsg, WM_PAINT
+		JE  PAINT_WINDOW
+	invoke	DefWindowProc, hWin, uMsg, wParam, lParam
+
+	ret
+
+DESTROY_WINDOW:
+	invoke 	PostQuitMessage, 0
+	xor	eax, eax
+	ret
+
+CREATE_WINDOW:
+	INVOKE CreateWindowExA, 0, offset CLSEDT, offset TEXTA, WS_CHILD+WS_VISIBLE, 30, 50, 60, 20, hWin, 0, hInstance, 0 
+	mov  hEdit,eax  
+	mov  eax,0   
+	INVOKE ShowWindow, hEdit, SW_SHOWNORMAL  
+	 
+	INVOKE CreateWindowExA, 0, offset CLSBTN, offset CPBUT, WS_CHILD+WS_VISIBLE, 10, 90, 100, 20, hWin, 0, hInstance, 0
+	mov  hButton,eax 
+	mov  eax,0   
+	INVOKE ShowWindow, hButton, SW_SHOWNORMAL      
+	
+	xor	eax, eax     
+	ret
+
+
+PAINT_WINDOW:
+    INVOKE BeginPaint, hWin, offset ps
 	mov hdc,eax  
-	INVOKE SetBkColor, hdc,  BACKGROUND
+	INVOKE SetBkColor, hdc, WindowColor
+	INVOKE SetTextColor, hdc, TextColor
+
+	INVOKE TextOutA, hdc, 10, 20, offset WindowText, SIZEOF WindowText
+	INVOKE TextOutA, hdc, 10, 50, offset XValueString, SIZEOF XValueString
+
+	INVOKE TextOutA,hdc, 100, 50, offset InputUnits, SIZEOF InputUnits
+
+	INVOKE EndPaint, hdc, offset ps
+	xor	eax, eax
+	ret
+
+COMMAND_WINDOW:
+	mov eax, hButton  
+	cmp lParam,eax   
+	jne EXIT_COMAND
+
+    INVOKE SendMessage, hEdit, WM_GETTEXT, 20, offset TEXTA
+	INVOKE FpuAtoFL, offset TEXTA, offset InXValue, DEST_MEM
+
+	fsave fpuSaveState
+
+	fld CONST_180_VALUE
+	fldpi
+	fdiv st(0), st(1)
 	
-	INVOKE SetTextColor, hdc, TEXT
+	fld InXValue
+	fmul st(0), st(1)
 
-    mov eax, mess1_len
-	INVOKE TextOutA, hdc, 10, 20, offset mess1, eax
-	INVOKE EndPaint, hdc, offset ps      
-	MOV EAX, 0      
-	JMP FINISH 
+	fcos
+	
+	fld InXValue
+	fmul st(0), st(2)
 
-DEFWNDPROC:
-	INVOKE DefWindowProc, hW, Mes, wParam, lParam       
-	JMP FINISH 
+	fsin
 
-WMDESTROY:
-	INVOKE PostQuitMessage, 0      
-	MOV EAX, 0 
+	fmul st(0), st(1)
 
-FINISH: ret  
-WNDPROC ENDP 
-END START 
+	fstp OutFuncValue
+
+	frstor fpuSaveState
+
+	INVOKE FpuFLtoA,addr OutFuncValue,6,offset OutFuncValueStr, SRC1_REAL or SRC2_DIMM
+	INVOKE TextOutA,hdc, 100, 50, offset InputUnits, SIZEOF InputUnits
+	INVOKE TextOutA,hdc, 170, 50, offset ResultString, SIZEOF ResultString
+	INVOKE TextOutA,hdc, 250, 50, offset OutFuncValueStr, SIZEOF OutFuncValueStr
+
+EXIT_COMAND:   
+	 xor	eax, eax
+	 ret
+
+WndProc endp
+
+end start
