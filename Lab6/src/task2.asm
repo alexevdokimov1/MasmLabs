@@ -7,83 +7,96 @@ var1 dd	0x1234ABCD
 
 _start:
 
-mov al, 'E'
-call Print
-mov al, 'A'
-call Print
-mov al, 'X'
-call Print
-mov al, '('
-call Print
-mov al, 'h'
-call Print
-mov al, 'e'
-call Print
-mov al, 'x'
-call Print
-mov al, ')'
-call Print
-mov al, '='
-call Print
+	mov al, 'H'
+	call Print
+	mov al, 'E'
+	call Print
+	mov al, 'X'
+	call Print
 
-mov edi,  dword [var1]
-push 255
-push_hex_char:
-	mov ebx, edi
-	and ebx, 15
-	push bx
-	shr edi, 4
-	jnz	push_hex_char
+	mov ecx, 9
+	PrintSpace:
+	mov al, ' '
+	call Print
+	loop PrintSpace
+
+	mov al, 'O'
+	call Print
+	mov al, 'C'
+	call Print
+	mov al, 'T'
+	call Print
+
+	mov ecx, 9
+	PrintSpace2:
+	mov al, ' '
+	call Print
+	loop PrintSpace2
+
+	mov al, 'B'
+	call Print
+	mov al, 'I'
+	call Print
+	mov al, 'N'
+	call Print
+
+	mov al, 0xA
+	call Print
+	mov al, 0xD
+	call Print
+
+	mov ecx, 10
+
+OutMem:
+
+	mov edi,  dword [ecx]
+	push 255
+	push_hex_char:
+		mov ebx, edi
+		and ebx, 15
+		push bx
+		shr edi, 4
+		jnz	push_hex_char
 	
-pop_hex_char:
-	pop ax;
-	cmp ax, 255
-	je finish_hex
-	call PrintHex
-	jmp pop_hex_char
-	finish_hex:
+	pop_hex_char:
+		pop ax;
+		cmp ax, 255
+		je finish_hex
+		call PrintHex
+		jmp pop_hex_char
+		finish_hex:
 
-mov al, 0xA
-call Print
-mov al, 0xD
-call Print
-
-mov al, 'E'
-call Print
-mov al, 'D'
-call Print
-mov al, 'I'
-call Print
-mov al, '('
-call Print
-mov al, 'o'
-call Print
-mov al, 'c'
-call Print
-mov al, 't'
-call Print
-mov al, ')'
-call Print
-mov al, '='
-call Print
-
-mov edi, dword [var1]
-push 255
-push_oct_char:
-	mov ebx, edi
-	and ebx, 7
-	push bx
-	shr edi, 3
-	jnz	push_oct_char
+		mov al, ' '
+		call Print
+		mov al, ' '
+		call Print
+		mov al, ' '
+		call Print
+		mov al, ' '
+		call Print
+		
+	mov edi, dword [ecx]
+	push 255
+	push_oct_char:
+		mov ebx, edi
+		and ebx, 7
+		push bx
+		shr edi, 3
+		jnz	push_oct_char
 	
-pop_oct_char:
-	pop ax;
-	cmp ax, 255
-	je finish_oct
-	call PrintHex
-	jmp pop_oct_char
-	finish_oct:
+		pop_oct_char:
+		pop ax
+		cmp ax, 255
+		je finish_oct
+		call PrintHex
+		jmp pop_oct_char
+		finish_oct:
 
+	mov al, 0xA
+	call Print
+	mov al, 0xD
+	call Print
+	loop OutMem
 ret
 
 Print:
