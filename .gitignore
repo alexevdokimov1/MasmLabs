@@ -364,3 +364,9 @@ FodyWeavers.xsd
 
 #Task Data
 *.dat
+
+#exe files
+*.exe
+
+#images
+*.img

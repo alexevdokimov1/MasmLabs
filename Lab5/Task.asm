@@ -19,23 +19,24 @@ WinMain proto :dword, :dword, :dword, :dword
 WndProc proto :dword, :dword, :dword, :dword
 
 .data?
-	hInstance 		dd ?
+	hInstance dd ?
 
 	hEdit dd ?
 	hButton dd ?
+	hAnswer dd ?
 
 	hdc  DD ?
 	ps  PAINTSTRUCT <?>
-.data
-	;текст поля
-	TEXTA db 20 dup(0)
 
 	;переменные вычисления
 	InXValue real10 ?
 	OutFuncValue real10 ?
-	OutFuncValueStr db 8 dup(' ')
 
 	fpuSaveState dw ?
+.data
+	;текст поля
+	TEXTA db 20 dup(0)
+	OutFuncValueStr db 20 dup(' ')
 
 .const
 	ClassName db 'CLASS32',0
@@ -46,6 +47,7 @@ WndProc proto :dword, :dword, :dword, :dword
 	CLSEDT db 'EDIT',0  
 	CPBUT db 'Рассчитать',0  
 	CLSBTN db 'BUTTON',0 
+	TEXT db 'STATIC',0
 
 	WindowText db 'Посчитать sin(x)*cos(x): ',0
 	XValueString db 'x=',0
@@ -61,6 +63,8 @@ start:
 	finit
 
 	mov TEXTA, '0'
+	lea esi, OutFuncValueStr
+	mov byte ptr [esi+1], '0'
 
 	invoke 	GetModuleHandle, NULL
 	mov	hInstance, eax
@@ -100,7 +104,7 @@ WinMain proc hInst:dword, hPrevInst:dword, szCmdLine:dword, nShowCmd:dword
 
 	invoke	CreateWindowEx, WS_EX_APPWINDOW, addr ClassName, addr WindowTitle,
 				WS_CAPTION + WS_SYSMENU + WS_THICKFRAME + WS_GROUP + WS_TABSTOP, 
-				CW_USEDEFAULT, CW_USEDEFAULT, 500, 500, 
+				CW_USEDEFAULT, CW_USEDEFAULT, 500, 300, 
 				NULL, NULL, hInst, NULL
 
 	mov	hWnd, eax
@@ -108,20 +112,20 @@ WinMain proc hInst:dword, hPrevInst:dword, szCmdLine:dword, nShowCmd:dword
 	invoke	ShowWindow, hWnd, nShowCmd
 	invoke	UpdateWindow, hWnd
 
-MSG_LOOP:
-	invoke 	GetMessage, addr msg, NULL, 0, 0
-	cmp 	eax, 0
-	je 	END_LOOP
+	MSG_LOOP:
+		invoke 	GetMessage, addr msg, NULL, 0, 0
+		cmp 	eax, 0
+		je END_LOOP
 
-	invoke	TranslateMessage, addr msg
-	invoke	DispatchMessage, addr msg
+		invoke	TranslateMessage, addr msg
+		invoke	DispatchMessage, addr msg
 
-	jmp 	MSG_LOOP
+		jmp 	MSG_LOOP
 
-END_LOOP:
+	END_LOOP:
 
-	mov	eax, msg.wParam
-	ret
+		mov	eax, msg.wParam
+		ret
 
 WinMain endp
 
@@ -136,7 +140,6 @@ WndProc proc hWin :dword, uMsg :dword, 	wParam :dword,lParam:dword
 	CMP uMsg, WM_PAINT
 		JE  PAINT_WINDOW
 	invoke	DefWindowProc, hWin, uMsg, wParam, lParam
-
 	ret
 
 DESTROY_WINDOW:
@@ -147,28 +150,33 @@ DESTROY_WINDOW:
 CREATE_WINDOW:
 	INVOKE CreateWindowExA, 0, offset CLSEDT, offset TEXTA, WS_CHILD+WS_VISIBLE, 30, 50, 60, 20, hWin, 0, hInstance, 0 
 	mov  hEdit,eax  
-	mov  eax,0   
+	xor eax, eax   
 	INVOKE ShowWindow, hEdit, SW_SHOWNORMAL  
 	 
 	INVOKE CreateWindowExA, 0, offset CLSBTN, offset CPBUT, WS_CHILD+WS_VISIBLE, 10, 90, 100, 20, hWin, 0, hInstance, 0
-	mov  hButton,eax 
-	mov  eax,0   
+	mov  hButton,eax
+	xor  eax,eax
 	INVOKE ShowWindow, hButton, SW_SHOWNORMAL      
-	
+
+	INVOKE CreateWindowExA, 0, offset TEXT, offset OutFuncValueStr, WS_CHILD+WS_VISIBLE, 250, 50, 100, 20, hWin, 0, hInstance, 0 
+	mov hAnswer, eax
+	xor  eax,eax
+	INVOKE ShowWindow, hAnswer, SW_SHOWNORMAL   
+
 	xor	eax, eax     
 	ret
 
 
 PAINT_WINDOW:
     INVOKE BeginPaint, hWin, offset ps
-	mov hdc,eax  
+	mov hdc,eax
 	INVOKE SetBkColor, hdc, WindowColor
 	INVOKE SetTextColor, hdc, TextColor
 
 	INVOKE TextOutA, hdc, 10, 20, offset WindowText, SIZEOF WindowText
 	INVOKE TextOutA, hdc, 10, 50, offset XValueString, SIZEOF XValueString
-
-	INVOKE TextOutA,hdc, 100, 50, offset InputUnits, SIZEOF InputUnits
+	INVOKE TextOutA, hdc, 100, 50, offset InputUnits, SIZEOF InputUnits
+	INVOKE TextOutA, hdc, 170, 50, offset ResultString, SIZEOF ResultString
 
 	INVOKE EndPaint, hdc, offset ps
 	xor	eax, eax
@@ -204,10 +212,8 @@ COMMAND_WINDOW:
 
 	frstor fpuSaveState
 
-	INVOKE FpuFLtoA,addr OutFuncValue,6,offset OutFuncValueStr, SRC1_REAL or SRC2_DIMM
-	INVOKE TextOutA,hdc, 100, 50, offset InputUnits, SIZEOF InputUnits
-	INVOKE TextOutA,hdc, 170, 50, offset ResultString, SIZEOF ResultString
-	INVOKE TextOutA,hdc, 250, 50, offset OutFuncValueStr, SIZEOF OutFuncValueStr
+	INVOKE FpuFLtoA,addr OutFuncValue,6,offset OutFuncValueStr, SRC1_REAL or SRC2_DIMM	
+	INVOKE SetWindowTextA, hAnswer, offset OutFuncValueStr
 
 EXIT_COMAND:   
 	 xor	eax, eax
