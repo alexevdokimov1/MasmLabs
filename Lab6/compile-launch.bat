@@ -1,15 +1,15 @@
 @echo off
-echo Launching Task1
-echo Creating Image
-echo Enter file name
-set /p FileName=Enter image src name: 
+chcp 65001
+echo Запуск файла
+echo Создание образа
+set /p FileName=Введите имя файла-источника: 
 if not exist "src\%FileName%.asm" (
-echo SRC file not found
+echo Файл-источник не найден
 pause
 exit
 )
 if not exist "images" mkdir images
 nasm.exe src\%FileName%.asm -o images\boot-%FileName%.img
-echo Launcting Image
+echo Запуск образа
 "C:\Program Files\qemu\qemu-system-i386.exe" "images\boot-%FileName%.img"
 pause
