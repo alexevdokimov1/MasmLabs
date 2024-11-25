@@ -55,7 +55,7 @@ OutMem:
 		pop ax
 		cmp ax, 0xFF
 		je finish_oct
-		call PrintOct
+		call PrintNumber
 		jmp pop_oct_char
 		finish_oct:
 
@@ -75,7 +75,7 @@ OutMem:
 		pop ax
 		cmp ax, 0xFF
 		je finish_bin
-		call PrintOct
+		call PrintNumber
 		jmp pop_bin_char
 		finish_bin:
 
@@ -92,24 +92,18 @@ Print:
 	INT 0x10	
 	RET
 
+PrintNumber:
+	add al, 48
+	call Print
+	RET
+
 PrintHex:
 	cmp al, 10
 	jl NotHex
 	add al, 7
 	NotHex:
-	add al, 48
-	MOV AH, 0x0E                   
-	MOV BH, 0x00                   
-	MOV BL, 0x14   
-	INT 0x10	
-	RET
-
-PrintOct:
-	add al, 48
-	MOV AH, 0x0E                   
-	MOV BH, 0x00           
-	MOV BL, 0x14
-	INT 0x10	
+	
+	call PrintNumber
 	RET
 
 PrintString:	                    
