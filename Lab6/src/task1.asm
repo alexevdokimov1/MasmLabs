@@ -1,28 +1,26 @@
 [BITS 16]	                       
 [ORG 0x7C00]	                   
 
-MOV SI, str1       ; В SI заносим указатель на первый элемент строки
-CALL draw_string   ; Вызываем функцию рисования строк
+MOV SI, str1
+CALL draw_string
 RET
 
 draw_string:	                    
-MOV AL, [SI]	   ; Читаем в AL символ по указателю              
-INC SI	           ; Увеличиваем указатель
-CALL print         ; Вызываем функцию рисования символа
-OR AL, AL	       ; Проверяем на 0 регистр AL            
-JNZ draw_string    ; БУ переход в начало                         
+MOV AL, [SI] 
+INC SI
+CALL print
+OR AL, AL
+JNZ draw_string
 RET   
 
 print:
-MOV AH, 0x0E   ; Вывод символа на экран (AH = 13)                   
-MOV BH, 0x00   ; Номер страницы                  
-MOV BL, 0x14   ; Цвет (только для графического режима)
-INT 0x10	   ; Работа с прерываниями видеоадаптера                       
+MOV AH, 0x0E
+MOV BH, 0x00
+MOV BL, 0x14
+INT 0x10
 RET		                           
 
-str1	db	'RSREU', 13, 10, 0	; Строка с текстом
-; В завершение строки идут символы с кодами 13, 10 и 0
-; Новая строка, Возврат в начало строки     
+str1	db	'RSREU', 0xD, 0xA, 0
 
 TIMES 510 - ($ - $$) db 0	       
 DW 0xAA55	
